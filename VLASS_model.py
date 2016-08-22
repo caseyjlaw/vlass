@@ -15,21 +15,22 @@ import scipy.optimize as opt
 #nant=float(raw_input("N antennas (Hz): "))
 #row_sep=float(raw_input("row separation (arcmin): ")
 
-fov=14.23	 # fwhm field of view (theta_pb) in arcminutes
+#fov=14.23	 # fwhm field of view (theta_pb) in arcminutes
+fov=14.8	 # fwhm field of view (theta_pb) in arcminutes
 decmin=-40
 decmax=90
-overhead=1.26
+overhead=1.19
 fullsens=69e-6
 effbw=1.5e9
 nspw=16		# number of spws, used in the data rate calculation
 tdump=0.45
-nant=27
+nant=26
 row_sep=7.2
 freq = 3.0e9
 eta = 0.92    # correlator efficiency
 bmax = 11.1e3    # longest baselines in meters for B config
-#sefd = 370 # 3GHz from OSS, but not consistent with Emmanuel's most recent
-sefd = 350 # average across the band, Emmanuel's preliminary from May 2017
+#sefd = 370 # 3GHz from OSS center of the band
+sefd = 350 # average across the band from Emmanuel's recent measurements
 
 # calculate some things based on the above:
 
@@ -46,7 +47,15 @@ min_tdump = 45*(nspw*64*4/16384.) / 25.    # maxdr is max data rate in MB/s; min
 # scale is square of nominal Tsys over by true Tsys (largely due to spillover)
 # note: VLSS used a max scaling factor of 2 in time at -40 dec.
 
-extra_time = np.array([ [-40, 2.6], [-35, 1.75], [-30, 1.3], [-25, 1.2], [-20, 1.10]])  # new est (w/pyephem) and explicit +-1.5-hr transit
+# for uniform sensitivity:
+#extra_time = np.array([ [-40, 2.6], [-35, 1.75], [-30, 1.3], [-25, 1.2], [-20, 1.10]])  # new est (w/pyephem) and explicit +-1.5-hr transit
+
+# for not quite uniform sensitivity at low dec (take sqrt of above numbers):
+#extra_time = np.array([ [-40, 1.61], [-35, 1.32], [-30, 1.14], [-25, 1.1], [-20, 1.05]])  # new est (w/pyephem) and explicit +-1.5-hr transit
+# above nos^0.6
+#extra_time = np.array([ [-40, 1.77], [-35, 1.40], [-30, 1.17], [-25, 1.12], [-20, 1.06]])  # new est (w/pyephem) and explicit +-1.5-hr transit
+# above nos^0.7
+extra_time = np.array([ [-40, 1.95], [-35, 1.48], [-30, 1.2], [-25, 1.14], [-20, 1.07]])  # new est (w/pyephem) and explicit +-1.5-hr transit
 
 # fit powerlaw to this
 powerlawneg = lambda dec, a, alpha: 1 + a * (dec/float(decmin))**alpha   # seems to behave about right
@@ -59,7 +68,7 @@ nominalarea1 = []
 nominalarea2 = []
 effectivearea1 = []
 effectivearea2 = []
-#for dec in range(-40,90,1): # actually -40.5!
+#for dec in range(-40,90,1): # actually -40.5! so do calc for -40.5 and -39.5 and average
 for dec in range(decmin,decmax,1):
     area = np.abs(np.cos(np.radians(dec)) * np.degrees(2*np.pi))
     nominalarea1.append(area)
