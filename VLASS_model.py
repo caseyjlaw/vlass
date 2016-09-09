@@ -16,9 +16,11 @@ import scipy.optimize as opt
 #row_sep=float(raw_input("row separation (arcmin): ")
 
 #fov=14.23	 # fwhm field of view (theta_pb) in arcminutes
-fov=14.8	 # fwhm field of view (theta_pb) in arcminutes
+fov=14.786	 # fwhm field of view (theta_pb) in arcminutes
+#                  fixed to give same answer as TIP for survey speed
+#		   and time request
 decmin=-40
-decmax=90
+decmax=-10
 overhead=1.19
 fullsens=69e-6
 effbw=1.5e9
@@ -98,7 +100,7 @@ print '-20:', powerlawneg(-20, p1[0], p1[1])
 #print '+90:', powerlawpos(90, (1/3.)*p1[0], p1[1])
 print
 print 'For uniform sensitivity at all Dec:'
-print '\tTrue area %d. Effective area %d. Scaling in time %.2f' % (nomarea, effarea, scaling)
+print '\tTrue area %d. Effective area %d. Scaling in time %.3f' % (nomarea, effarea, scaling)
 
 surveytime1 = 3 * overhead * effarea/surveyspeed
 surveytime2 = 3 * overhead * nomarea/surveyspeed
