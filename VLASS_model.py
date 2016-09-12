@@ -132,7 +132,7 @@ def fit_extra(decmin, decmax):
 nbl = nant*(nant-1)/2  # number of baselines
 resolution = 3600*np.degrees(2.997925e8/float(freq)/bmax)     # resolution in asec for freq in Hz, bmax in meters
 sensitivity = np.sqrt(nepoch) * fullsens # sensitivity per epoch (Jy)
-dt = (sefd/(sensitivity*eta))**2/(2*nbl*effbw*2)    # required integration time in s (inverse of sensitivity eqn)
+dt = nepoch * (sefd/(sensitivity*eta))**2/(2*nbl*effbw*2)    # required integration time in s (inverse of sensitivity eqn)
 surveyspeed = 0.5665 * fov**2/dt        # ss in deg2/hr (or amin2/s), fov in amin, tint in s
 scanrate = surveyspeed/rowsep
 datarate = 45 * (nchan*nprod/16384.) / tdump    # does not include autocorrelations
@@ -141,7 +141,7 @@ min_tdump = 45 * (nchan*nprod/16384.) / drlimit    # maxdr is max data rate in M
 print('***************************************')
 print('*** Output Survey Design Parameters ***')
 print('***************************************')
-print('\tEffective integration time per point (s): {0}'.format(dt))
+print('\tEffective total integration time per point (s): {0}'.format(dt))
 print('\tSurvey speed (deg2/hr): {0}'.format(surveyspeed))
 print('\tScan rate (arcmin/s): {0}'.format(scanrate))
 print('\tFraction of beam slewed over per int: {0}'.format((scanrate*min_tdump)/fov))
