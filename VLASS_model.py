@@ -9,7 +9,7 @@ parser = argparse.ArgumentParser(description='Parameters for VLASS design calcul
 parser.add_argument('--fov', type=float, help='S-band primary beam fwhm (arcmin)', default=14.786)
 #default fov fixed to give same answer as TIP for survey speed and time request
 parser.add_argument('--decmin', type=int, help='Min Declination (deg)', default=-40)
-parser.add_argument('--decmax', type=int, help='Max Declination (deg)', default=-10)
+parser.add_argument('--decmax', type=int, help='Max Declination (deg)', default=90)
 parser.add_argument('--overhead', type=float, help='Multiplicative overhead factor', default=1.19)
 parser.add_argument('--failurerate', type=float, help='Multiplicative failure rate factor', default=1.03)
 parser.add_argument('--fullsens', type=float, help='Full survey sensitivity required (Jy/beam)', default=69e-6)
@@ -158,8 +158,8 @@ try:
     print('***********************************')
     print('***           Time              ***')
     print('***********************************')
-    print('\tNominal survey time (no overhead or failures; uniform): {0}'.format(nomtime))
-    print('\tNominal survey time with overhead (no failures; uniform): {0}'.format(nomtime_overhead))
+    print('\tNominal survey time (no overhead or failures; non-uniform sensitivity): {0}'.format(nomtime))
+    print('\tNominal survey time with overhead (no failures; non-uniform sensitivity): {0}'.format(nomtime_overhead))
     print('\tTotal time: {0}'.format(total_time))
 except:
     pass
