@@ -15,7 +15,7 @@ tilelist_url = archive_url + '/VLASS_dyn_summary.php'
 # TODO: use CADC cutout service
 # http://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/caom2ops/sync?ID=ad:VLASS/VLASS1.1.ql.T29t05.J112120%2B763000.10.2048.v1.I.iter1.image.pbcor.tt0.subim.fits&CIRCLE=168.3471998536797+76.18699791158396+0.01
 
-def get_coverage(co, epoch=None):
+def get_coverage(co, epoch=None, tilesfile='/Users/claw/data/vlass/VLASS_dyn_summary_21feb20.txt'):
     """ Given a ra, dec, return the name of a VLASS tile.
     Sexagesimal (hh:mm:ss, dd:mm:ss) coords expected.
     Can input coordinate as (RA, Dec) tuple or astropy SkyCoord.
@@ -27,9 +27,17 @@ def get_coverage(co, epoch=None):
             print('Warning: RA should be in hours')
         co = coord.SkyCoord(ra, dec, unit=(u.hour, u.deg))
 
-    res = requests.get(tilelist_url)
-    rows_imaged = filter(lambda x: 'imaged' in x,
-                          res.content.decode().split('\n'))
+    if os.path.exists(tilesfile):
+        print(f'Using tiles file from disk {tilesfile}')
+        with open(tilesfile) as fp:
+            lines_all = fp.readlines()
+        rows_imaged = filter(lambda x: 'imaged' in x, lines_all)
+    else:
+        print('Using requests to get tiles file')
+        res = requests.get(tilelist_url)
+        rows_imaged = filter(lambda x: 'imaged' in x,
+                             res.content.decode().split('\n'))
+
     rows = []
     for row in rows_imaged:
         name, decmin, decmax, ramin, ramax, epoch0, date, *_ = row.split()
