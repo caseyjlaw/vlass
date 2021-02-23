@@ -5,6 +5,7 @@ import astropy.units as u
 import astropy.coordinates as coord
 from astropy.io import fits
 import astropy.time
+from astropy import table
 from astropy.utils.data import download_file
 import pandas as pd
 
@@ -14,29 +15,40 @@ tilelist_url = archive_url + '/VLASS_dyn_summary.php'
 # TODO: use CADC cutout service
 # http://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/caom2ops/sync?ID=ad:VLASS/VLASS1.1.ql.T29t05.J112120%2B763000.10.2048.v1.I.iter1.image.pbcor.tt0.subim.fits&CIRCLE=168.3471998536797+76.18699791158396+0.01
 
-def get_tilename(co):
+def get_coverage(co, epoch=None):
     """ Given a ra, dec, return the name of a VLASS tile.
     Sexagesimal (hh:mm:ss, dd:mm:ss) coords expected.
+    Can input coordinate as (RA, Dec) tuple or astropy SkyCoord.
     """
 
-#    co = coord.SkyCoord(ra, dec, unit=(u.hour, u.deg))
+    if not isinstance(co, coord.SkyCoord):
+        ra, dec = co
+        co = coord.SkyCoord(ra, dec, unit=(u.hour, u.deg))
+
     res = requests.get(tilelist_url)
-    tiles_imaged = filter(lambda x: 'imaged' in x,
+    rows_imaged = filter(lambda x: 'imaged' in x,
                           res.content.decode().split('\n'))
-    names = []
-    for tile in tiles_imaged:
-        name, decmin, decmax, ramin, ramax, *_ = tile.split()
+    rows = []
+    for row in rows_imaged:
+        name, decmin, decmax, ramin, ramax, epoch0, date, *_ = row.split()
 
-        if (co.ra.hour > float(ramin)) and (co.ra.hour < float(ramax)) and \
-           (co.dec.deg > float(decmin)) and (co.dec.deg < float(decmax)):
-                names.append(name)
+        if (co.ra.hour >= float(ramin)) and (co.ra.hour < float(ramax)) and \
+           (co.dec.deg >= float(decmin)) and (co.dec.deg < float(decmax)):
+            if epoch is not None:
+                if epoch != epoch0:
+                    continue
+            rows.append([name, decmin, decmax, ramin, ramin, epoch0, date])
+    if len(rows):
+        tab = table.Table(names=('name', 'decmin', 'decmax', 'ramin', 'ramax', 'epoch', 'date'), rows=rows)
+        return tab
+    else:
+        return
 
-    assert len(names) < 2, 'Found more than one tile {0}'.format(names)
 
-    if len(names) == 0:
-        raise FileNotFoundError('No tile found')
-
-    return names[0]
+def get_tilename(co):
+    tab = get_coverage(co)
+    assert len(tab) == 1
+    return tab['name'].tolist()[0]
 
 
 def get_filename(co, tilename=None):
@@ -118,8 +130,10 @@ def parse_tab():
         try:
             fitsname = get_fits(co)
             print(fitsname)
-        except FileNotFoundError:
-            print('Skipping coord at {0}'.format(co))
+        except:
+            pass
+#        except FileNotFoundError:
+#            print('Skipping coord at {0}'.format(co))
 
 
 def make_reg():
