@@ -23,6 +23,8 @@ def get_coverage(co, epoch=None):
 
     if not isinstance(co, coord.SkyCoord):
         ra, dec = co
+        if ra > 24:
+            print('Warning: RA should be in hours')
         co = coord.SkyCoord(ra, dec, unit=(u.hour, u.deg))
 
     res = requests.get(tilelist_url)
@@ -31,13 +33,13 @@ def get_coverage(co, epoch=None):
     rows = []
     for row in rows_imaged:
         name, decmin, decmax, ramin, ramax, epoch0, date, *_ = row.split()
-
+        if epoch is not None:
+            if epoch != epoch0:
+                continue
         if (co.ra.hour >= float(ramin)) and (co.ra.hour < float(ramax)) and \
            (co.dec.deg >= float(decmin)) and (co.dec.deg < float(decmax)):
-            if epoch is not None:
-                if epoch != epoch0:
-                    continue
-            rows.append([name, decmin, decmax, ramin, ramin, epoch0, date])
+            rows.append([name, decmin, decmax, ramin, ramax, epoch0, date])
+
     if len(rows):
         tab = table.Table(names=('name', 'decmin', 'decmax', 'ramin', 'ramax', 'epoch', 'date'), rows=rows)
         return tab
