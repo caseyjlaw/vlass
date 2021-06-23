@@ -28,12 +28,12 @@ def get_coverage(co, epoch=None, tilesfile='/Users/claw/data/vlass/VLASS_dyn_sum
         co = coord.SkyCoord(ra, dec, unit=(u.hour, u.deg))
 
     if os.path.exists(tilesfile):
-        print(f'Using tiles file from disk {tilesfile}')
+#        print(f'Using tiles file from disk {tilesfile}')
         with open(tilesfile) as fp:
             lines_all = fp.readlines()
         rows_imaged = filter(lambda x: 'imaged' in x, lines_all)
     else:
-        print('Using requests to get tiles file')
+        print('Falling back to using requests to get tiles file')
         res = requests.get(tilelist_url)
         rows_imaged = filter(lambda x: 'imaged' in x,
                              res.content.decode().split('\n'))
@@ -42,7 +42,7 @@ def get_coverage(co, epoch=None, tilesfile='/Users/claw/data/vlass/VLASS_dyn_sum
     for row in rows_imaged:
         name, decmin, decmax, ramin, ramax, epoch0, date, *_ = row.split()
         if epoch is not None:
-            if epoch != epoch0:
+            if epoch not in epoch0:
                 continue
         if (co.ra.hour >= float(ramin)) and (co.ra.hour < float(ramax)) and \
            (co.dec.deg >= float(decmin)) and (co.dec.deg < float(decmax)):
@@ -61,15 +61,16 @@ def get_tilename(co):
     return tab['name'].tolist()[0]
 
 
-def get_filename(co, tilename=None):
+def get_filename(co, epoch, tilename=None):
     """ Given coord, find tile and fits directory for VLASS data.
     Calls get_tilename as intermediate (getting tile, e.g., T20t18).
+    epoch is VLASS1.1, VLASS2.1, etc.
     """
 
     if tilename is None:
         tilename = get_tilename(co)
-    res = requests.get('{0}/quicklook/VLASS1.1/{1}/'
-                       .format(archive_url, tilename))
+    res = requests.get('{0}/quicklook/{1}/{2}/'
+                       .format(archive_url, epoch, tilename))
 
     lines = filter(lambda x: 'href' in x and tilename in x,
                    res.content.decode().split('\n'))
@@ -77,7 +78,8 @@ def get_filename(co, tilename=None):
     sep0 = 360*u.deg
     file0 = ''
     for line in lines:
-        filename = line.split("\"")[1][:-1]
+#        filename = line.split("\"")[1][:-1]
+        filename = line.split('href="')[1].split('/">')[0]  # new format?
         center = filename.split(tilename)[-1].split('.')[1]
         co2 = coord.SkyCoord('{0}:{1}:{2}'
                              .format(center[1:3], center[3:5], center[5:7]),
@@ -95,13 +97,13 @@ def get_filename(co, tilename=None):
     return file0
 
 
-def get_fitsname(co):
+def get_fitsname(co, epoch):
     """ Given coord, find fits file in VLASS
     """
 
     tilename = get_tilename(co)
-    file0 = get_filename(co, tilename=tilename)
-    base_url = '{0}/quicklook/VLASS1.1/{1}/{2}'.format(archive_url, tilename, file0)
+    file0 = get_filename(co, epoch=epoch, tilename=tilename)
+    base_url = '{0}/quicklook/{1}/{2}/{3}'.format(archive_url, epoch, tilename, file0)
     res = requests.get(base_url)
 
     fitsfile = list(filter(lambda x: file0 in x and 'tt0.subim.fits' in x,
@@ -110,11 +112,11 @@ def get_fitsname(co):
     return '{0}/{1}'.format(base_url, fitsfile)
 
 
-def get_fits(co, outname=None):
+def get_fits(co, epoch, outname=None):
     """ Given coord, download VLASS fits file.
     """
 
-    fitsfile = get_fitsname(co)
+    fitsfile = get_fitsname(co, epoch=epoch)
     if outname is None:
         outname = fitsfile.split('/')[-1]
 
